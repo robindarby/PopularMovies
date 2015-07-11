@@ -6,6 +6,7 @@ import android.os.Parcelable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -16,7 +17,9 @@ import java.util.Locale;
 /**
  * Created by darby on 7/11/15.
  */
-public class Movie implements Parcelable {
+public class Movie implements Serializable {
+
+    private static final long serialVersionUID = 6684019190445541112L;
 
     private static final String TAG = "MOVIE_MODEL";
 
@@ -265,13 +268,4 @@ public class Movie implements Parcelable {
 
     };
 
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-
-    }
 }

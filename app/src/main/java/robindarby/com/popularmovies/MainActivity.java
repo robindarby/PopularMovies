@@ -2,6 +2,7 @@ package robindarby.com.popularmovies;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -34,6 +35,8 @@ public class MainActivity extends ActionBarActivity {
 
     private ArrayList<Movie> movieList = new ArrayList<Movie>();
 
+    public static final String MOVIE_INTENT_EXTRA = "movie";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,10 +53,10 @@ public class MainActivity extends ActionBarActivity {
         gridview.setAdapter(new MovieAdapter(this, movieList));
 
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View v,
-                                    int position, long id) {
-                Toast.makeText(MainActivity.this, "" + position,
-                        Toast.LENGTH_SHORT).show();
+            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+                Intent detailsIntent = new Intent(getApplicationContext(), MovieDetailsActivity.class);
+                detailsIntent.putExtra(MOVIE_INTENT_EXTRA, movieList.get(position));
+                startActivity(detailsIntent);
             }
         });
 
