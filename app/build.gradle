@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 
+repositories {
+    mavenCentral()
+}
+
 android {
     compileSdkVersion 22
     buildToolsVersion "22.0.1"
@@ -17,9 +21,17 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    packagingOptions {
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+    }
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:22.1.1'
+    compile 'com.squareup.picasso:picasso:2.5.2'
+    compile 'org.apache.httpcomponents:httpmime:+'
+    compile 'org.apache.commons:commons-lang3:+'
+    compile 'commons-io:commons-io:+'
 }
