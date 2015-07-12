@@ -10,6 +10,8 @@ import com.squareup.picasso.Picasso;
 
 import org.w3c.dom.Text;
 
+import java.text.DateFormat;
+
 import robindarby.com.popularmovies.models.Movie;
 
 /**
@@ -34,7 +36,8 @@ public class MovieDetailsActivity extends Activity {
         Picasso.with(this).load(mMovie.getPosterPathForWidth(Movie.POSTER_WIDTH_500)).into(posterIV);
 
         TextView releaseDateTV = (TextView)findViewById(R.id.release_date_textView);
-        releaseDateTV.setText(mMovie.getReleaseDate().toString());
+        DateFormat df = DateFormat.getDateInstance();
+        releaseDateTV.setText(df.format(mMovie.getReleaseDate()));
 
         TextView ratingTV = (TextView)findViewById(R.id.rating_textView);
         ratingTV.setText(String.valueOf(mMovie.getVoteAverage()) + " / 10");
