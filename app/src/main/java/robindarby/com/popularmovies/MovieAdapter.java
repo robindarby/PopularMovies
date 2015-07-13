@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
@@ -60,7 +61,13 @@ public class MovieAdapter extends BaseAdapter {
         }
 
         ImageView imageView = (ImageView)convertView.findViewById(R.id.poster_imageView);
-        Picasso.with(mContext).load(movie.getPosterPathForWidth(Movie.POSTER_WIDTH_342)).into(imageView);
+        Picasso.with(mContext).load(movie.getPosterPathForWidth(Movie.POSTER_WIDTH_185)).into(imageView);
+
+        TextView ratingTV = (TextView) convertView.findViewById(R.id.rating_textView);
+        ratingTV.setText(String.valueOf(movie.getVoteAverage()) + " / 10");
+
+        TextView popTV = (TextView) convertView.findViewById(R.id.popular_textView);
+        popTV.setText(String.valueOf((int)movie.getPopularity()));
 
         return convertView;
     }
