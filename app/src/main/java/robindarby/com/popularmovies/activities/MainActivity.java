@@ -1,31 +1,29 @@
-package robindarby.com.popularmovies;
+package robindarby.com.popularmovies.activities;
 
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.AsyncTask;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
-import android.widget.Toast;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 
+import robindarby.com.popularmovies.R;
+import robindarby.com.popularmovies.adapters.MovieAdapter;
 import robindarby.com.popularmovies.models.Movie;
-import robindarby.com.popularmovies.requests.DiscoverMovieJSONRequest;
-import robindarby.com.popularmovies.services.DiscoverMoviesService;
+import robindarby.com.popularmovies.services.MoviesService;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -39,8 +37,11 @@ public class MainActivity extends ActionBarActivity {
 
     private ArrayList<Movie> mMovieList = new ArrayList<Movie>();
 
+
     public static final String MOVIE_INTENT_EXTRA = "movie";
     public static final String MOVIE_LIST_STATE_EXTRA = "movies";
+
+    public static final String FAVORITE_MOVIES_PREF = "favoritemovies";
 
     private GridView mGridview;
 
@@ -53,37 +54,52 @@ public class MainActivity extends ActionBarActivity {
 
         mGridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-                Intent detailsIntent = new Intent(getApplicationContext(), MovieDetailsActivity.class);
-                detailsIntent.putExtra(MOVIE_INTENT_EXTRA, mMovieList.get(position));
-                startActivity(detailsIntent);
+                Movie selectedMovie = null;
+
+                for (Movie movie : mMovieList) {
+                    if(movie.getId() == id) {
+                        selectedMovie = movie;
+                        break;
+                    }
+                }
+
+                if (selectedMovie != null) {
+                    Intent detailsIntent = new Intent(getApplicationContext(), MovieDetailsActivity.class);
+                    detailsIntent.putExtra(MOVIE_INTENT_EXTRA, selectedMovie);
+                    startActivity(detailsIntent);
+                }
             }
         });
 
-        if(savedInstanceState != null && savedInstanceState.getSerializable(MOVIE_LIST_STATE_EXTRA) != null) {
-            mMovieList = (ArrayList<Movie>)savedInstanceState.getSerializable(MOVIE_LIST_STATE_EXTRA);
-            updateMovies();
+        if (savedInstanceState != null && savedInstanceState.getSerializable(MOVIE_LIST_STATE_EXTRA) != null) {
+            mMovieList = (ArrayList<Movie>) savedInstanceState.getSerializable(MOVIE_LIST_STATE_EXTRA);
+            updateMovies(false);
         }
         else {
-            // go get the movies in a background thread.
-            mLoadingDialog = ProgressDialog.show(this, "", getString(R.string.loading), true);
-            LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(DiscoverMoviesService.ACTION));
-
-            Intent mServiceIntent = new Intent(this, DiscoverMoviesService.class);
-            startService(mServiceIntent);
+            startMovieService();
         }
     }
 
-    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+    private void startMovieService() {
+        // go get the movies in a background thread.
+        mLoadingDialog = ProgressDialog.show(this, "", getString(R.string.loading), true);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mDiscoverMoviesServiceMessageReceiver, new IntentFilter(MoviesService.ACTION));
+        Intent mServiceIntent = new Intent(this, MoviesService.class);
+        startService(mServiceIntent);
+    }
+
+    private BroadcastReceiver mDiscoverMoviesServiceMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             mLoadingDialog.dismiss();
-            mMovieList = (ArrayList<Movie>)intent.getSerializableExtra(DiscoverMoviesService.MOVIES_INTENT_EXTRA);
-            updateMovies();
+            mMovieList = (ArrayList<Movie>) intent.getSerializableExtra(MoviesService.MOVIES_INTENT_EXTRA);
+            updateMovies(false);
         }
     };
 
-    private void updateMovies() {
-        mGridview.setAdapter(new MovieAdapter(this, mMovieList));
+
+    private void updateMovies(boolean favorites) {
+        mGridview.setAdapter(new MovieAdapter(this, mMovieList, favorites));
     }
 
     @Override
@@ -109,13 +125,14 @@ public class MainActivity extends ActionBarActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_most_pop_settings) {
             Collections.sort(mMovieList, Movie.MostPopularComparator);
-            updateMovies();
+            updateMovies(false);
             return true;
-        }
-        else if(id == R.id.action_rating_settings) {
+        } else if (id == R.id.action_rating_settings) {
             Collections.sort(mMovieList, Movie.RatedComparator);
-            updateMovies();
+            updateMovies(false);
             return true;
+        } else if (id == R.id.action_fav_settings) {
+            updateMovies(true);
         }
 
         return super.onOptionsItemSelected(item);
@@ -136,7 +153,7 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mDiscoverMoviesServiceMessageReceiver);
     }
 
     @Override

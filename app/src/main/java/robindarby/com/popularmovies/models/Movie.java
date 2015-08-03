@@ -1,7 +1,10 @@
 package robindarby.com.popularmovies.models;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.preference.PreferenceManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -14,6 +17,8 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Locale;
 
+import robindarby.com.popularmovies.activities.MainActivity;
+
 /**
  * Created by darby on 7/11/15.
  */
@@ -23,7 +28,7 @@ public class Movie implements Serializable {
 
     private static final String TAG = "MOVIE_MODEL";
 
-    private static final String ID_FIELD = "id";
+    public static final String ID_FIELD = "id";
     private static final String ORIGNAL_LANG_FIELD = "original_language";
     private static final String ORIGNAL_TITLE_FIELD = "orignal_title";
     private static final String OVERVIEW_FIELD = "overview";
@@ -37,6 +42,8 @@ public class Movie implements Serializable {
     private static final String VIDEO_FIELD = "video";
     private static final String VOTE_AVG_FIELD = "vote_average";
     private static final String VOTE_COUNT_FIELD = "vote_count";
+    private static final String VIDEOS_FIELD = "videos";
+    private static final String RESULTS_FIELD = "results";
 
     private static final String POSTER_BASE_URL_STR = "http://image.tmdb.org/t/p/";
     public static final String POSTER_WIDTH_92 = "w92";
@@ -61,6 +68,10 @@ public class Movie implements Serializable {
     private boolean video = false;
     private double voteAverage;
     private int voteCount;
+    private ArrayList<Video> videos = new ArrayList<Video>();
+    private ArrayList<Review> reviews = new ArrayList<Review>();
+
+    private boolean discovery = false;
 
     public Movie(JSONObject json) throws Exception {
         if(json.has(ID_FIELD)) {
@@ -117,6 +128,15 @@ public class Movie implements Serializable {
 
         if(json.has(VOTE_COUNT_FIELD)) {
             setVoteCount(json.getInt(VOTE_COUNT_FIELD));
+        }
+
+        if(json.has(VIDEOS_FIELD)) {
+            JSONObject vidResults = json.getJSONObject(VIDEOS_FIELD);
+            JSONArray videosList = vidResults.getJSONArray(RESULTS_FIELD);
+            for(int i=0; i < videosList.length(); i++) {
+                JSONObject videoJSON = (JSONObject)videosList.get(i);
+                addVideo(new Video(videoJSON));
+            }
         }
     }
 
@@ -240,6 +260,33 @@ public class Movie implements Serializable {
 
     public void setVoteCount(int voteCount) {
         this.voteCount = voteCount;
+    }
+
+    public boolean isFavotite(Context context) {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        ArrayList<String> favMovieIds = new ArrayList<String>(preferences.getStringSet(MainActivity.FAVORITE_MOVIES_PREF, null));
+        if(favMovieIds.contains(String.valueOf(getId()))) return true;
+        return false;
+    }
+
+    public boolean isDiscovery() {
+        return discovery;
+    }
+
+    public void setDiscovery(boolean discovery) {
+        this.discovery = discovery;
+    }
+
+    public void addVideo(Video video) {
+        getVideos().add(video);
+    }
+
+    public ArrayList<Video> getVideos() {
+        return videos;
+    }
+
+    public ArrayList<Review> getReviews() {
+        return reviews;
     }
 
     public static Comparator<Movie> MostPopularComparator = new Comparator<Movie>() {

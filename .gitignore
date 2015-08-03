@@ -28,3 +28,4 @@ proguard/
 
 # API Key
 app/src/main/res/values/themoviedb_apikey.xml
+app/src/main/res/values/youtube_apikey.xml

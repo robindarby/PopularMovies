@@ -10,7 +10,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".MainActivity"
+            android:name=".activities.MainActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -19,11 +19,11 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".MovieDetailsActivity">
+        <activity android:name=".activities.MovieDetailsActivity">
 
         </activity>
 
-        <service android:name=".services.DiscoverMoviesService" android:exported="false"/>
+        <service android:name=".services.MoviesService" android:exported="false"/>
     </application>
 
 </manifest>

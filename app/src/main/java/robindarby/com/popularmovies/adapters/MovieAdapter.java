@@ -1,4 +1,4 @@
-package robindarby.com.popularmovies;
+package robindarby.com.popularmovies.adapters;
 
 import android.content.Context;
 import android.util.Log;
@@ -13,6 +13,7 @@ import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
+import robindarby.com.popularmovies.R;
 import robindarby.com.popularmovies.models.Movie;
 
 /**
@@ -27,9 +28,22 @@ public class MovieAdapter extends BaseAdapter {
 
     private LayoutInflater mInflater;
 
-    public MovieAdapter(Context context, ArrayList<Movie> movieList) {
+    public MovieAdapter(Context context, ArrayList<Movie> movieList, boolean favorites) {
         mContext = context;
-        mMovieList = movieList;
+
+        mMovieList.clear();
+        for(Movie movie : movieList) {
+            if(favorites) {
+                if (movie.isFavotite(mContext)) {
+                    mMovieList.add(movie);
+                }
+            }
+            else {
+                if(movie.isDiscovery()) {
+                    mMovieList.add(movie);
+                }
+            }
+        }
 
         mInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         if (mInflater == null) throw new IllegalStateException ("unable to get Inflater Service");
