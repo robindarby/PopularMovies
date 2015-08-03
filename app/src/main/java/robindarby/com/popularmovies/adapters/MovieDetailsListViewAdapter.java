@@ -45,6 +45,8 @@ public class MovieDetailsListViewAdapter extends BaseAdapter implements YouTubeT
 
     private LayoutInflater mInflater;
 
+    private ArrayList<YouTubeThumbnailLoader> mLoaders = new ArrayList<YouTubeThumbnailLoader>();
+
     public MovieDetailsListViewAdapter(Activity context, Movie movie) {
         mContext = context;
         mMovie = movie;
@@ -168,10 +170,17 @@ public class MovieDetailsListViewAdapter extends BaseAdapter implements YouTubeT
     public void onInitializationSuccess(YouTubeThumbnailView youTubeThumbnailView, YouTubeThumbnailLoader youTubeThumbnailLoader) {
         String videoId = (String)youTubeThumbnailView.getTag();
         youTubeThumbnailLoader.setVideo(videoId);
+        mLoaders.add(youTubeThumbnailLoader);
     }
 
     @Override
     public void onInitializationFailure(YouTubeThumbnailView youTubeThumbnailView, YouTubeInitializationResult youTubeInitializationResult) {
         Log.v(TAG, "Failed to load thumb :( - " + youTubeInitializationResult);
+    }
+
+    public void releaseLoaders() {
+        for(YouTubeThumbnailLoader loader : mLoaders) {
+            loader.release();
+        }
     }
 }

@@ -29,6 +29,7 @@ import robindarby.com.popularmovies.models.Movie;
 public class MovieDetailsActivity extends Activity {
 
     private Movie mMovie;
+    private MovieDetailsListViewAdapter mMovieDetailsListViewAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +40,13 @@ public class MovieDetailsActivity extends Activity {
         mMovie = (Movie) intent.getSerializableExtra(MainActivity.MOVIE_INTENT_EXTRA);
 
         ListView listView = (ListView) findViewById(R.id.movie_details_listView);
-        listView.setAdapter(new MovieDetailsListViewAdapter(this, mMovie));
+        mMovieDetailsListViewAdapter = new MovieDetailsListViewAdapter(this, mMovie);
+        listView.setAdapter(mMovieDetailsListViewAdapter);
+    }
+
+    @Override
+    protected void onDestroy() {
+        mMovieDetailsListViewAdapter.releaseLoaders();
+        super.onDestroy();
     }
 }
