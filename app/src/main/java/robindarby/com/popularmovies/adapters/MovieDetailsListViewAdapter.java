@@ -27,6 +27,7 @@ import java.util.HashSet;
 import robindarby.com.popularmovies.R;
 import robindarby.com.popularmovies.activities.MainActivity;
 import robindarby.com.popularmovies.models.Movie;
+import robindarby.com.popularmovies.models.Review;
 import robindarby.com.popularmovies.models.Video;
 
 /**
@@ -99,11 +100,11 @@ public class MovieDetailsListViewAdapter extends BaseAdapter implements YouTubeT
                 convertView = mInflater.inflate(R.layout.video_list_item, null);
             }
             else {
-
+                convertView = mInflater.inflate(R.layout.review_list_item, null);
             }
         }
 
-        if (position == 0) {
+        if (position == 0) { // details
             TextView titleTV = (TextView) convertView.findViewById(R.id.title_textView);
             titleTV.setText(mMovie.getTitle());
 
@@ -144,7 +145,7 @@ public class MovieDetailsListViewAdapter extends BaseAdapter implements YouTubeT
                 }
             });
         }
-        else if(position < mMovie.getVideos().size() + 1) {
+        else if(position < mMovie.getVideos().size() + 1) { // Movie
             int videoIndex = position - 1;
             final Video video = mMovie.getVideos().get(videoIndex);
             YouTubeThumbnailView youTubeThumbView = (YouTubeThumbnailView) convertView.findViewById(R.id.youtube_thumbnailView);
@@ -158,8 +159,14 @@ public class MovieDetailsListViewAdapter extends BaseAdapter implements YouTubeT
             });
             youTubeThumbView.setTag(video.getId());
         }
-        else {
+        else { // review
+            int reviewIndex = position - 1 - mMovie.getVideos().size();
+            final Review review = mMovie.getReviews().get(reviewIndex);
+            TextView authorTextView = (TextView)convertView.findViewById(R.id.author_textView);
+            authorTextView.setText(review.getAuthor());
 
+            TextView contentTextView = (TextView)convertView.findViewById(R.id.content_textView);
+            contentTextView.setText(review.getContent());
         }
 
 

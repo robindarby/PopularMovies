@@ -43,6 +43,7 @@ public class Movie implements Serializable {
     private static final String VOTE_AVG_FIELD = "vote_average";
     private static final String VOTE_COUNT_FIELD = "vote_count";
     private static final String VIDEOS_FIELD = "videos";
+    private static final String REVIEWS_FIELD = "reviews";
     private static final String RESULTS_FIELD = "results";
 
     private static final String POSTER_BASE_URL_STR = "http://image.tmdb.org/t/p/";
@@ -136,6 +137,15 @@ public class Movie implements Serializable {
             for(int i=0; i < videosList.length(); i++) {
                 JSONObject videoJSON = (JSONObject)videosList.get(i);
                 addVideo(new Video(videoJSON));
+            }
+        }
+
+        if(json.has(REVIEWS_FIELD)) {
+            JSONObject revResults = json.getJSONObject(REVIEWS_FIELD);
+            JSONArray revsList = revResults.getJSONArray(RESULTS_FIELD);
+            for(int i=0; i < revsList.length(); i++) {
+                JSONObject revJSON = (JSONObject)revsList.get(i);
+                addReview(new Review(revJSON));
             }
         }
     }
@@ -277,12 +287,16 @@ public class Movie implements Serializable {
         this.discovery = discovery;
     }
 
-    public void addVideo(Video video) {
+    private void addVideo(Video video) {
         getVideos().add(video);
     }
 
     public ArrayList<Video> getVideos() {
         return videos;
+    }
+
+    private void addReview(Review review) {
+        getReviews().add(review);
     }
 
     public ArrayList<Review> getReviews() {
