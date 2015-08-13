@@ -1,41 +1,24 @@
 package robindarby.com.popularmovies.activities;
 
 import android.app.ProgressDialog;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
-import android.support.v4.content.LocalBroadcastManager;
+import android.content.res.Configuration;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.GridView;
-
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
-
 import robindarby.com.popularmovies.R;
 import robindarby.com.popularmovies.adapters.MovieAdapter;
+import robindarby.com.popularmovies.fragments.MovieDetailsFragment;
+import robindarby.com.popularmovies.fragments.MovieListFragment;
 import robindarby.com.popularmovies.models.Movie;
-import robindarby.com.popularmovies.services.MoviesService;
 
 
 public class MainActivity extends ActionBarActivity {
 
     private static final String TAG = "MAIN";
-
-    private final static String JSON_RESULTS_FIELD = "results";
-
-    protected ProgressDialog mLoadingDialog;
-
-
-    private ArrayList<Movie> mMovieList = new ArrayList<Movie>();
 
 
     public static final String MOVIE_INTENT_EXTRA = "movie";
@@ -43,68 +26,49 @@ public class MainActivity extends ActionBarActivity {
 
     public static final String FAVORITE_MOVIES_PREF = "favoritemovies";
 
-    private GridView mGridview;
+
+    private boolean mTwoPane = false;
+    private final static String MOVIE_DETAILS_FRAGMENT_TAG = "moviedetailsfragment";
+    private final static String MOVIE_LIST_FRAGMENT_TAG = "movielistfragment";
+    private MovieListFragment mMovieListFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.main);
 
-        mGridview = (GridView) findViewById(R.id.gridview);
-
-        mGridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-                Movie selectedMovie = null;
-
-                for (Movie movie : mMovieList) {
-                    if(movie.getId() == id) {
-                        selectedMovie = movie;
-                        break;
-                    }
-                }
-
-                if (selectedMovie != null) {
-                    Intent detailsIntent = new Intent(getApplicationContext(), MovieDetailsActivity.class);
-                    detailsIntent.putExtra(MOVIE_INTENT_EXTRA, selectedMovie);
-                    startActivity(detailsIntent);
-                }
+        if (findViewById(R.id.movie_detail_container) != null) {
+            mTwoPane = true;
+            if (savedInstanceState == null) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.movie_detail_container, new MovieDetailsFragment(), MOVIE_DETAILS_FRAGMENT_TAG)
+                        .commit();
             }
-        });
+        }
 
-        if (savedInstanceState != null && savedInstanceState.getSerializable(MOVIE_LIST_STATE_EXTRA) != null) {
-            mMovieList = (ArrayList<Movie>) savedInstanceState.getSerializable(MOVIE_LIST_STATE_EXTRA);
-            updateMovies(false);
+        mMovieListFragment = (MovieListFragment)getSupportFragmentManager()
+                .findFragmentById(R.id.fragment_grid_container);
+    }
+
+    public void showMovieDetails(Movie movie) {
+        if(mTwoPane) {
+            MovieDetailsFragment detailsFragment = (MovieDetailsFragment) getSupportFragmentManager().findFragmentByTag(MOVIE_DETAILS_FRAGMENT_TAG);
+            detailsFragment.showMovieDetails(movie);
         }
         else {
-            startMovieService();
+            MovieDetailsFragment detailsFragment = new MovieDetailsFragment();
+            Bundle args = new Bundle();
+            args.putSerializable(MOVIE_INTENT_EXTRA, movie);
+            detailsFragment.setArguments(args);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_grid_container, detailsFragment, MOVIE_LIST_FRAGMENT_TAG)
+                    .addToBackStack(null)
+                    .commit();
         }
-    }
-
-    private void startMovieService() {
-        // go get the movies in a background thread.
-        mLoadingDialog = ProgressDialog.show(this, "", getString(R.string.loading), true);
-        LocalBroadcastManager.getInstance(this).registerReceiver(mDiscoverMoviesServiceMessageReceiver, new IntentFilter(MoviesService.ACTION));
-        Intent mServiceIntent = new Intent(this, MoviesService.class);
-        startService(mServiceIntent);
-    }
-
-    private BroadcastReceiver mDiscoverMoviesServiceMessageReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            mLoadingDialog.dismiss();
-            mMovieList = (ArrayList<Movie>) intent.getSerializableExtra(MoviesService.MOVIES_INTENT_EXTRA);
-            updateMovies(false);
-        }
-    };
-
-
-    private void updateMovies(boolean favorites) {
-        mGridview.setAdapter(new MovieAdapter(this, mMovieList, favorites));
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        outState.putSerializable(MOVIE_LIST_STATE_EXTRA, mMovieList);
         super.onSaveInstanceState(outState);
     }
 
@@ -122,17 +86,16 @@ public class MainActivity extends ActionBarActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_most_pop_settings) {
-            Collections.sort(mMovieList, Movie.MostPopularComparator);
-            updateMovies(false);
+            mMovieListFragment.updateMovies(false, Movie.MostPopularComparator);
             return true;
-        } else if (id == R.id.action_rating_settings) {
-            Collections.sort(mMovieList, Movie.RatedComparator);
-            updateMovies(false);
+        }
+        else if (id == R.id.action_rating_settings) {
+            mMovieListFragment.updateMovies(false, Movie.RatedComparator);
             return true;
-        } else if (id == R.id.action_fav_settings) {
-            updateMovies(true);
+        }
+        else if (id == R.id.action_fav_settings) {
+            mMovieListFragment.updateMovies(true, null);
         }
 
         return super.onOptionsItemSelected(item);
@@ -153,7 +116,6 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mDiscoverMoviesServiceMessageReceiver);
     }
 
     @Override

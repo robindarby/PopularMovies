@@ -64,8 +64,11 @@ public class MoviesService extends IntentService {
         }
 
         // Get favorite movies.
+        ArrayList<String> favMovieIds = null;
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        ArrayList<String> favMovieIds = new ArrayList<String>(preferences.getStringSet(MainActivity.FAVORITE_MOVIES_PREF, null));
+        if(preferences.contains(MainActivity.FAVORITE_MOVIES_PREF)) {
+            favMovieIds = new ArrayList<String>(preferences.getStringSet(MainActivity.FAVORITE_MOVIES_PREF, null));
+        }
 
         if(favMovieIds != null) {
             for(String movieId : favMovieIds) {

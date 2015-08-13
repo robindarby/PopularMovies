@@ -274,8 +274,10 @@ public class Movie implements Serializable {
 
     public boolean isFavotite(Context context) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        ArrayList<String> favMovieIds = new ArrayList<String>(preferences.getStringSet(MainActivity.FAVORITE_MOVIES_PREF, null));
-        if(favMovieIds.contains(String.valueOf(getId()))) return true;
+        if(preferences.contains(MainActivity.FAVORITE_MOVIES_PREF)) {
+            ArrayList<String> favMovieIds = new ArrayList<String>(preferences.getStringSet(MainActivity.FAVORITE_MOVIES_PREF, null));
+            if (favMovieIds.contains(String.valueOf(getId()))) return true;
+        }
         return false;
     }
 
