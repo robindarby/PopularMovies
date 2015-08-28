@@ -101,10 +101,11 @@ public class MovieDetailsFragment extends Fragment {
         mListView.setAdapter(mMovieDetailsListViewAdapter);
 
         if(mVideos.size() > 0) {
-            Intent shareIntent = new Intent();
-            shareIntent.setAction(Intent.ACTION_SEND);
-            shareIntent.putExtra(Intent.EXTRA_TEXT, "https://www.youtube.com/watch?v=" + mVideos.get(0).getId());
-            ((MainActivity) getActivity()).setShareIntent(shareIntent);
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            intent.putExtra(Intent.EXTRA_SUBJECT, "SUBJECT");
+            intent.putExtra(Intent.EXTRA_TEXT,"https://www.youtube.com/watch?v=" + mVideos.get(0).getId());
+            ((MainActivity) getActivity()).setShareIntent(intent);
         }
     }
 
