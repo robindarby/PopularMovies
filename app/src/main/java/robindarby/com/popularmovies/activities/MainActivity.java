@@ -24,9 +24,6 @@ public class MainActivity extends ActionBarActivity {
     public static final String MOVIE_INTENT_EXTRA = "movie";
     public static final String MOVIE_LIST_STATE_EXTRA = "movies";
 
-    public static final String FAVORITE_MOVIES_PREF = "favoritemovies";
-
-
     private boolean mTwoPane = false;
     private final static String MOVIE_DETAILS_FRAGMENT_TAG = "moviedetailsfragment";
     private final static String MOVIE_LIST_FRAGMENT_TAG = "movielistfragment";
@@ -53,7 +50,7 @@ public class MainActivity extends ActionBarActivity {
     public void showMovieDetails(Movie movie) {
         if(mTwoPane) {
             MovieDetailsFragment detailsFragment = (MovieDetailsFragment) getSupportFragmentManager().findFragmentByTag(MOVIE_DETAILS_FRAGMENT_TAG);
-            detailsFragment.showMovieDetails(movie);
+            detailsFragment.loadMovieDetails(movie);
         }
         else {
             MovieDetailsFragment detailsFragment = new MovieDetailsFragment();
@@ -65,6 +62,10 @@ public class MainActivity extends ActionBarActivity {
                     .addToBackStack(null)
                     .commit();
         }
+    }
+
+    public void refreashFavorateMovieList() {
+        mMovieListFragment.refreashFavorateMovieList();
     }
 
     @Override

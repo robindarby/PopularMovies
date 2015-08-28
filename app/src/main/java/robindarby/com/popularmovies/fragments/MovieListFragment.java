@@ -23,6 +23,7 @@ import java.util.Comparator;
 import robindarby.com.popularmovies.R;
 import robindarby.com.popularmovies.activities.MainActivity;
 import robindarby.com.popularmovies.adapters.MovieAdapter;
+import robindarby.com.popularmovies.data.MovieManager;
 import robindarby.com.popularmovies.models.Movie;
 import robindarby.com.popularmovies.services.MoviesService;
 
@@ -31,14 +32,10 @@ import robindarby.com.popularmovies.services.MoviesService;
  */
 public class MovieListFragment extends Fragment {
 
-
     protected ProgressDialog mLoadingDialog;
-
-
     private ArrayList<Movie> mMovieList = new ArrayList<Movie>();
-
-
     private GridView mGridview;
+    private boolean mIsDisplayingFavorites = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -83,7 +80,6 @@ public class MovieListFragment extends Fragment {
         @Override
         public void onReceive(Context context, Intent intent) {
             mLoadingDialog.dismiss();
-            mMovieList = (ArrayList<Movie>) intent.getSerializableExtra(MoviesService.MOVIES_INTENT_EXTRA);
             updateMovies(false, null);
         }
     };
@@ -91,10 +87,23 @@ public class MovieListFragment extends Fragment {
 
     public void updateMovies(boolean favorites, Comparator comparator) {
 
+        MovieManager manager = MovieManager.getInstance(getActivity());
+
+        mIsDisplayingFavorites = favorites;
+        mMovieList = (favorites) ? manager.getFavoriteMovies() : manager.getMovies();
+
         if(comparator != null)
             Collections.sort(mMovieList, comparator);
 
-        mGridview.setAdapter(new MovieAdapter(getActivity(), mMovieList, favorites));
+        mGridview.setAdapter(new MovieAdapter(getActivity(), mMovieList));
+    }
+
+    public void refreashFavorateMovieList() {
+        if(mIsDisplayingFavorites) {
+            MovieManager manager = MovieManager.getInstance(getActivity());
+            mMovieList = manager.getFavoriteMovies();
+            mGridview.setAdapter(new MovieAdapter(getActivity(), mMovieList));
+        }
     }
 
     @Override

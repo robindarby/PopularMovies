@@ -13,6 +13,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 
 import robindarby.com.popularmovies.activities.MainActivity;
+import robindarby.com.popularmovies.data.MovieManager;
 import robindarby.com.popularmovies.models.Movie;
 import robindarby.com.popularmovies.requests.DiscoverMovieJSONRequest;
 import robindarby.com.popularmovies.requests.MoviesJSONRequest;
@@ -48,14 +49,19 @@ public class MoviesService extends IntentService {
             e.printStackTrace();
         }
 
+        MovieManager manager = MovieManager.getInstance(getApplicationContext());
+
         ArrayList<Movie> movieList = new ArrayList<Movie>();
         if(movieJSONList != null) {
             for (int i = 0; i < movieJSONList.length(); i++) {
                 try {
-                    int movieId = movieJSONList.getJSONObject(i).getInt(Movie.ID_FIELD);
-                    Movie movie = getFullMovie(movieId);
-                    movie.setDiscovery(true);
-                    movieList.add(movie);
+                    Movie newMovie = new Movie(movieJSONList.getJSONObject(i));
+                    Movie oldMovie = manager.getMovie(newMovie.getId());
+                    if(oldMovie != null) {
+                        if(oldMovie.isFavorite()) newMovie.setFavorite(true);
+                        manager.deleteMovie(oldMovie.getId());
+                    }
+                    manager.setMovie(newMovie);
                 }
                 catch (Exception e) {
                     e.printStackTrace();
@@ -63,44 +69,10 @@ public class MoviesService extends IntentService {
             }
         }
 
-        // Get favorite movies.
-        ArrayList<String> favMovieIds = null;
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        if(preferences.contains(MainActivity.FAVORITE_MOVIES_PREF)) {
-            favMovieIds = new ArrayList<String>(preferences.getStringSet(MainActivity.FAVORITE_MOVIES_PREF, null));
-        }
-
-        if(favMovieIds != null) {
-            for(String movieId : favMovieIds) {
-                // do we already have this movie?
-                boolean found = false;
-                for(Movie movie : movieList) {
-                    if(movie.getId() == Integer.valueOf(movieId)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if(!found) {
-                    try {
-                        Movie movie = getFullMovie(Integer.valueOf(movieId));
-                        movieList.add(movie);
-                    }
-                    catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
-            }
-        }
 
         Intent resultsIntent = new Intent(ACTION);
-        resultsIntent.putExtra(MOVIES_INTENT_EXTRA, movieList);
         Log.d(TAG, "sendBroadcast");
         LocalBroadcastManager.getInstance(this).sendBroadcast(resultsIntent);
-    }
-
-    private Movie getFullMovie(int movieId) throws Exception {
-        return new Movie(new MoviesJSONRequest(getApplicationContext(), movieId).makeRequest());
     }
 
 }

@@ -28,22 +28,11 @@ public class MovieAdapter extends BaseAdapter {
 
     private LayoutInflater mInflater;
 
-    public MovieAdapter(Context context, ArrayList<Movie> movieList, boolean favorites) {
+    public MovieAdapter(Context context, ArrayList<Movie> movieList) {
         mContext = context;
 
         mMovieList.clear();
-        for(Movie movie : movieList) {
-            if(favorites) {
-                if (movie.isFavotite(mContext)) {
-                    mMovieList.add(movie);
-                }
-            }
-            else {
-                if(movie.isDiscovery()) {
-                    mMovieList.add(movie);
-                }
-            }
-        }
+        mMovieList = movieList;
 
         mInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         if (mInflater == null) throw new IllegalStateException ("unable to get Inflater Service");
@@ -78,7 +67,7 @@ public class MovieAdapter extends BaseAdapter {
         Picasso.with(mContext).load(movie.getPosterPathForWidth(Movie.POSTER_WIDTH_185)).into(imageView);
 
         TextView ratingTV = (TextView) convertView.findViewById(R.id.rating_textView);
-        ratingTV.setText(String.valueOf(movie.getVoteAverage()) + " / 10");
+        ratingTV.setText(String.valueOf((int)(movie.getVoteAverage() + 0.5)) + " / 10");
 
         TextView popTV = (TextView) convertView.findViewById(R.id.popular_textView);
         popTV.setText(String.valueOf((int)movie.getPopularity()));

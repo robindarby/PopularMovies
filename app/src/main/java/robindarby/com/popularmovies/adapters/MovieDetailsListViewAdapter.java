@@ -26,6 +26,7 @@ import java.util.HashSet;
 
 import robindarby.com.popularmovies.R;
 import robindarby.com.popularmovies.activities.MainActivity;
+import robindarby.com.popularmovies.data.MovieManager;
 import robindarby.com.popularmovies.models.Movie;
 import robindarby.com.popularmovies.models.Review;
 import robindarby.com.popularmovies.models.Video;
@@ -39,6 +40,8 @@ public class MovieDetailsListViewAdapter extends BaseAdapter implements YouTubeT
 
     private Activity mContext;
     private Movie mMovie;
+    private ArrayList<Review> mReviews = new ArrayList<Review>();
+    private ArrayList<Video> mVideos = new ArrayList<Video>();
 
     private static final int MOVIE_DETAILS_TYPE = 0;
     private static final int VIDEO_TYPE = 1;
@@ -48,9 +51,11 @@ public class MovieDetailsListViewAdapter extends BaseAdapter implements YouTubeT
 
     private ArrayList<YouTubeThumbnailLoader> mLoaders = new ArrayList<YouTubeThumbnailLoader>();
 
-    public MovieDetailsListViewAdapter(Activity context, Movie movie) {
+    public MovieDetailsListViewAdapter(Activity context, Movie movie, ArrayList<Review> reviews, ArrayList<Video> clips) {
         mContext = context;
         mMovie = movie;
+        mReviews = reviews;
+        mVideos = clips;
 
         mInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         if (mInflater == null) throw new IllegalStateException ("unable to get Inflater Service");
@@ -58,7 +63,7 @@ public class MovieDetailsListViewAdapter extends BaseAdapter implements YouTubeT
 
     @Override
     public int getCount() {
-        return mMovie.getVideos().size() + mMovie.getReviews().size() + 1;
+        return mVideos.size() + mReviews.size() + 1;
     }
 
     @Override
@@ -81,7 +86,7 @@ public class MovieDetailsListViewAdapter extends BaseAdapter implements YouTubeT
         if (position == 0) {
             return MOVIE_DETAILS_TYPE;
         }
-        else if(position < mMovie.getVideos().size() + 1) {
+        else if(position < mVideos.size() + 1) {
             return VIDEO_TYPE;
         }
         else {
@@ -96,7 +101,7 @@ public class MovieDetailsListViewAdapter extends BaseAdapter implements YouTubeT
             if (position == 0) {
                 convertView = mInflater.inflate(R.layout.movie_details_list_item, null);
             }
-            else if(position < mMovie.getVideos().size() + 1) {
+            else if(position < mVideos.size() + 1) {
                 convertView = mInflater.inflate(R.layout.video_list_item, null);
             }
             else {
@@ -116,38 +121,37 @@ public class MovieDetailsListViewAdapter extends BaseAdapter implements YouTubeT
             releaseDateTV.setText(df.format(mMovie.getReleaseDate()));
 
             TextView ratingTV = (TextView)convertView.findViewById(R.id.rating_textView);
-            ratingTV.setText(String.valueOf(mMovie.getVoteAverage()) + " / 10");
+            ratingTV.setText(String.valueOf((int)(mMovie.getVoteAverage()+ 0.5)) + " / 10");
 
             TextView summaryTV = (TextView)convertView.findViewById(R.id.summary_textView);
             summaryTV.setText(mMovie.getOverview());
 
             final Button addToFavButton = (Button)convertView.findViewById(R.id.favorites_button);
-            if(mMovie.isFavotite(convertView.getContext())) {
+            if(mMovie.isFavorite()) {
                 addToFavButton.setText(convertView.getContext().getString(R.string.remove_favorites));
             }
 
             final int movieId = mMovie.getId();
+            final MainActivity mainActivity = (MainActivity) mContext;
             addToFavButton.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
-                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(v.getContext());
-                    ArrayList<String> favMovieIds = new ArrayList<String>(preferences.getStringSet(MainActivity.FAVORITE_MOVIES_PREF, null));
-                    if(favMovieIds.contains(String.valueOf(movieId))) {
-                        favMovieIds.remove(String.valueOf(movieId));
+                    MovieManager manager = MovieManager.getInstance(v.getContext());
+                    Movie movie = manager.getMovie(movieId);
+                    if(movie.isFavorite()) {
                         addToFavButton.setText(v.getContext().getString(R.string.add_to_favorites));
+                        manager.setFavorite(movieId, false);
                     }
                     else {
-                        favMovieIds.add(String.valueOf(movieId));
                         addToFavButton.setText(v.getContext().getString(R.string.remove_favorites));
+                        manager.setFavorite(movieId, true);
                     }
-                    SharedPreferences.Editor editor = preferences.edit();
-                    editor.putStringSet(MainActivity.FAVORITE_MOVIES_PREF, new HashSet<String>(favMovieIds));
-                    editor.commit();
+                    mainActivity.refreashFavorateMovieList();
                 }
             });
         }
-        else if(position < mMovie.getVideos().size() + 1) { // Movie
+        else if(position < mVideos.size() + 1) { // Movie
             int videoIndex = position - 1;
-            final Video video = mMovie.getVideos().get(videoIndex);
+            final Video video = mVideos.get(videoIndex);
             YouTubeThumbnailView youTubeThumbView = (YouTubeThumbnailView) convertView.findViewById(R.id.youtube_thumbnailView);
             youTubeThumbView.initialize(convertView.getContext().getString(R.string.youtube_api_key), this);
             youTubeThumbView.setOnClickListener(new View.OnClickListener() {
@@ -160,8 +164,8 @@ public class MovieDetailsListViewAdapter extends BaseAdapter implements YouTubeT
             youTubeThumbView.setTag(video.getId());
         }
         else { // review
-            int reviewIndex = position - 1 - mMovie.getVideos().size();
-            final Review review = mMovie.getReviews().get(reviewIndex);
+            int reviewIndex = position - 1 - mVideos.size();
+            final Review review = mReviews.get(reviewIndex);
             TextView authorTextView = (TextView)convertView.findViewById(R.id.author_textView);
             authorTextView.setText(review.getAuthor());
 

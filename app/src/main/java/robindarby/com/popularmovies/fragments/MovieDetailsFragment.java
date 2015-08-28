@@ -1,9 +1,14 @@
 package robindarby.com.popularmovies.fragments;
 
 
+import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,38 +16,91 @@ import android.widget.GridView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 
+import java.util.ArrayList;
+
 import robindarby.com.popularmovies.R;
 import robindarby.com.popularmovies.activities.MainActivity;
 import robindarby.com.popularmovies.adapters.MovieDetailsListViewAdapter;
 import robindarby.com.popularmovies.models.Movie;
+import robindarby.com.popularmovies.models.Review;
+import robindarby.com.popularmovies.models.Video;
+import robindarby.com.popularmovies.services.MovieDetailsService;
+import robindarby.com.popularmovies.services.MoviesService;
 
 /**
  * Created by darby on 8/12/15.
  */
 public class MovieDetailsFragment extends Fragment {
 
-
+    protected ProgressDialog mLoadingDialog;
     private MovieDetailsListViewAdapter mMovieDetailsListViewAdapter;
     private ListView mListView;
+    private Movie mMovie = null;
+    private ArrayList<Review> mReviews = new ArrayList<Review>();
+    private ArrayList<Video> mVideos = new ArrayList<Video>();
+
+    private static final String MOVIE_STATE_EXTRA = "movie";
+    private static final String VIDEOS_STATE_EXTRA = "videos";
+    private static final String REVIEWS_STATE_EXTRA = "reviews";
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         RelativeLayout fragmentLayout = (RelativeLayout) inflater.inflate(R.layout.movie_details_fragment, container, false);
         mListView = (ListView) fragmentLayout.findViewById(R.id.movie_details_listView);
 
+        if (savedInstanceState != null && savedInstanceState.getSerializable(MOVIE_STATE_EXTRA) != null) {
+            mMovie = (Movie) savedInstanceState.getSerializable(MOVIE_STATE_EXTRA);
+            mVideos = (ArrayList<Video>) savedInstanceState.getSerializable(VIDEOS_STATE_EXTRA);
+            mReviews = (ArrayList<Review>) savedInstanceState.getSerializable(REVIEWS_STATE_EXTRA);
+            showMovieDetails();
+
+            return fragmentLayout;
+        }
+
         Bundle args = getArguments();
-        if(args.getSerializable(MainActivity.MOVIE_INTENT_EXTRA) != null) {
-            showMovieDetails((Movie)args.getSerializable(MainActivity.MOVIE_INTENT_EXTRA));
+        if(args != null && args.getSerializable(MainActivity.MOVIE_INTENT_EXTRA) != null) {
+            mMovie = (Movie) args.getSerializable(MainActivity.MOVIE_INTENT_EXTRA);
+            startMovieDetailsService();
         }
 
         return fragmentLayout;
     }
 
-    public void showMovieDetails(Movie movie) {
-        mMovieDetailsListViewAdapter = new MovieDetailsListViewAdapter(getActivity(), movie);
+    private void startMovieDetailsService() {
+        mLoadingDialog = ProgressDialog.show(getActivity(), "", getString(R.string.loading), true);
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mMovieDetailsServiceMessageReceiver, new IntentFilter(MovieDetailsService.ACTION));
+        Intent mServiceIntent = new Intent(getActivity(), MovieDetailsService.class);
+        mServiceIntent.putExtra(MovieDetailsService.MOVIE_ID_INTENT_EXTRA, mMovie.getId());
+        getActivity().startService(mServiceIntent);
+    }
+
+    private BroadcastReceiver mMovieDetailsServiceMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            mLoadingDialog.dismiss();
+            mReviews = (ArrayList<Review>)intent.getSerializableExtra(MovieDetailsService.REVIEWS_INTENT_EXTRA);
+            mVideos = (ArrayList<Video>)intent.getSerializableExtra(MovieDetailsService.CLIPS_INTENT_EXTRA);
+            showMovieDetails();
+        }
+    };
+
+    public void loadMovieDetails(Movie movie) {
+        mMovie = movie;
+        startMovieDetailsService();
+    }
+
+    private void showMovieDetails() {
+        mMovieDetailsListViewAdapter = new MovieDetailsListViewAdapter(getActivity(), mMovie, mReviews, mVideos);
         mListView.setAdapter(mMovieDetailsListViewAdapter);
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putSerializable(MOVIE_STATE_EXTRA, mMovie);
+        outState.putSerializable(REVIEWS_STATE_EXTRA, mReviews);
+        outState.putSerializable(VIDEOS_STATE_EXTRA, mVideos);
+        super.onSaveInstanceState(outState);
+    }
 
     @Override
     public void onDestroy() {

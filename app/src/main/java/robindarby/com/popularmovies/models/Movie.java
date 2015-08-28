@@ -1,10 +1,14 @@
 package robindarby.com.popularmovies.models;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
+import android.provider.BaseColumns;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -31,20 +35,21 @@ public class Movie implements Serializable {
     public static final String ID_FIELD = "id";
     private static final String ORIGNAL_LANG_FIELD = "original_language";
     private static final String ORIGNAL_TITLE_FIELD = "orignal_title";
-    private static final String OVERVIEW_FIELD = "overview";
-    private static final String RELEASE_DATE_FIELD = "release_date";
+    public static final String OVERVIEW_FIELD = "overview";
+    public static final String RELEASE_DATE_FIELD = "release_date";
     private static final String BACKDROP_PATH_FIELD = "backdrop_path";
     private static final String ADULT_FIELD = "adult";
     private static final String GENRE_IDS_FIELD = "genre_ids";
-    private static final String POSTER_PATH_FIELD = "poster_path";
+    public static final String POSTER_PATH_FIELD = "poster_path";
     private static final String POPULARITY_FIELD = "popularity";
-    private static final String TITLE_FIELD = "title";
+    public static final String TITLE_FIELD = "title";
     private static final String VIDEO_FIELD = "video";
-    private static final String VOTE_AVG_FIELD = "vote_average";
-    private static final String VOTE_COUNT_FIELD = "vote_count";
-    private static final String VIDEOS_FIELD = "videos";
-    private static final String REVIEWS_FIELD = "reviews";
-    private static final String RESULTS_FIELD = "results";
+    public static final String VOTE_AVG_FIELD = "vote_average";
+    public static final String VOTE_COUNT_FIELD = "vote_count";
+    public static final String VIDEOS_FIELD = "videos";
+    public static final String REVIEWS_FIELD = "reviews";
+    public static final String RESULTS_FIELD = "results";
+    public static final String FAVORITE_FIELD = "favorite";
 
     private static final String POSTER_BASE_URL_STR = "http://image.tmdb.org/t/p/";
     public static final String POSTER_WIDTH_92 = "w92";
@@ -69,10 +74,22 @@ public class Movie implements Serializable {
     private boolean video = false;
     private double voteAverage;
     private int voteCount;
-    private ArrayList<Video> videos = new ArrayList<Video>();
-    private ArrayList<Review> reviews = new ArrayList<Review>();
+    private boolean favorite = false;
 
-    private boolean discovery = false;
+
+    public Movie(Cursor c) throws Exception {
+        setId(c.getInt(c.getColumnIndexOrThrow(MovieEntry.COLUMN_NAME_MOVIE_ID)));
+        setTitle(c.getString(c.getColumnIndexOrThrow(MovieEntry.COLUMN_NAME_TITLE)));
+        setOverview(c.getString(c.getColumnIndexOrThrow(MovieEntry.COLUMN_NAME_OVERVIEW)));
+        setPosterPath(c.getString(c.getColumnIndexOrThrow(MovieEntry.COLUMN_NAME_POSTER_PATH)));
+        setVoteAverage(c.getFloat(c.getColumnIndexOrThrow(MovieEntry.COLUMN_NAME_VOTE_AVG)));
+        setVoteCount(c.getInt(c.getColumnIndexOrThrow(MovieEntry.COLUMN_NAME_VOTE_COUNT)));
+        String releaseDateStr = c.getString(c.getColumnIndexOrThrow(MovieEntry.COLUMN_NAME_RELEASE_DATE));
+        DateFormat format = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy", Locale.ENGLISH);
+        releaseDate = format.parse(releaseDateStr);
+        setFavorite(c.getInt(c.getColumnIndexOrThrow(MovieEntry.COLUMN_NAME_FAVORITE)) == 1);
+        setPopularity(c.getFloat(c.getColumnIndexOrThrow(MovieEntry.COLUMN_NAME_POPULARITY)));
+    }
 
     public Movie(JSONObject json) throws Exception {
         if(json.has(ID_FIELD)) {
@@ -129,24 +146,6 @@ public class Movie implements Serializable {
 
         if(json.has(VOTE_COUNT_FIELD)) {
             setVoteCount(json.getInt(VOTE_COUNT_FIELD));
-        }
-
-        if(json.has(VIDEOS_FIELD)) {
-            JSONObject vidResults = json.getJSONObject(VIDEOS_FIELD);
-            JSONArray videosList = vidResults.getJSONArray(RESULTS_FIELD);
-            for(int i=0; i < videosList.length(); i++) {
-                JSONObject videoJSON = (JSONObject)videosList.get(i);
-                addVideo(new Video(videoJSON));
-            }
-        }
-
-        if(json.has(REVIEWS_FIELD)) {
-            JSONObject revResults = json.getJSONObject(REVIEWS_FIELD);
-            JSONArray revsList = revResults.getJSONArray(RESULTS_FIELD);
-            for(int i=0; i < revsList.length(); i++) {
-                JSONObject revJSON = (JSONObject)revsList.get(i);
-                addReview(new Review(revJSON));
-            }
         }
     }
 
@@ -272,37 +271,12 @@ public class Movie implements Serializable {
         this.voteCount = voteCount;
     }
 
-    public boolean isFavotite(Context context) {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        if(preferences.contains(MainActivity.FAVORITE_MOVIES_PREF)) {
-            ArrayList<String> favMovieIds = new ArrayList<String>(preferences.getStringSet(MainActivity.FAVORITE_MOVIES_PREF, null));
-            if (favMovieIds.contains(String.valueOf(getId()))) return true;
-        }
-        return false;
+    public boolean isFavorite() {
+        return favorite;
     }
 
-    public boolean isDiscovery() {
-        return discovery;
-    }
-
-    public void setDiscovery(boolean discovery) {
-        this.discovery = discovery;
-    }
-
-    private void addVideo(Video video) {
-        getVideos().add(video);
-    }
-
-    public ArrayList<Video> getVideos() {
-        return videos;
-    }
-
-    private void addReview(Review review) {
-        getReviews().add(review);
-    }
-
-    public ArrayList<Review> getReviews() {
-        return reviews;
+    public void setFavorite(boolean favorite) {
+        this.favorite = favorite;
     }
 
     public static Comparator<Movie> MostPopularComparator = new Comparator<Movie>() {
@@ -330,5 +304,36 @@ public class Movie implements Serializable {
         }
 
     };
+
+
+    public ContentValues getContentValues() {
+        ContentValues values = new ContentValues();
+
+        values.put(MovieEntry.COLUMN_NAME_MOVIE_ID, getId());
+        values.put(MovieEntry.COLUMN_NAME_TITLE, getTitle());
+        values.put(MovieEntry.COLUMN_NAME_OVERVIEW, getOverview());
+        values.put(MovieEntry.COLUMN_NAME_POSTER_PATH, getPosterPath());
+        values.put(MovieEntry.COLUMN_NAME_VOTE_AVG, getVoteAverage());
+        values.put(MovieEntry.COLUMN_NAME_VOTE_COUNT, getVoteCount());
+        values.put(MovieEntry.COLUMN_NAME_RELEASE_DATE, getReleaseDate().toString());
+        values.put(MovieEntry.COLUMN_NAME_FAVORITE, isFavorite());
+        values.put(MovieEntry.COLUMN_NAME_POPULARITY, getPopularity());
+
+        return values;
+    }
+
+
+    public static abstract class MovieEntry implements BaseColumns {
+        public static final String TABLE_NAME = "movies";
+        public static final String COLUMN_NAME_MOVIE_ID = Movie.ID_FIELD;
+        public static final String COLUMN_NAME_TITLE = Movie.TITLE_FIELD;
+        public static final String COLUMN_NAME_OVERVIEW = Movie.OVERVIEW_FIELD;
+        public static final String COLUMN_NAME_POSTER_PATH = Movie.POSTER_PATH_FIELD;
+        public static final String COLUMN_NAME_VOTE_AVG = Movie.VOTE_AVG_FIELD;
+        public static final String COLUMN_NAME_VOTE_COUNT = Movie.VOTE_COUNT_FIELD;
+        public static final String COLUMN_NAME_RELEASE_DATE = Movie.RELEASE_DATE_FIELD;
+        public static final String COLUMN_NAME_FAVORITE = Movie.FAVORITE_FIELD;
+        public static final String COLUMN_NAME_POPULARITY = Movie.POPULARITY_FIELD;
+    }
 
 }
