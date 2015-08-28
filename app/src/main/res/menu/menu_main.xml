@@ -7,4 +7,9 @@
         android:orderInCategory="100" app:showAsAction="never" />
     <item android:id="@+id/action_fav_settings" android:title="@string/fav_movies"
         android:orderInCategory="100" app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_item_share"
+        android:title="@string/share"
+        android:actionProviderClass="android.widget.ShareActionProvider"
+        android:showAsAction="ifRoom"/>
 </menu>

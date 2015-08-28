@@ -52,7 +52,6 @@ public class MovieListFragment extends Fragment {
                         break;
                     }
                 }
-
                 if (selectedMovie != null) ((MainActivity)getActivity()).showMovieDetails(selectedMovie);
             }
         });

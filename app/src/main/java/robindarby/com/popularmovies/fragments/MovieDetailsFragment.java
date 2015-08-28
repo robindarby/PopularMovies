@@ -1,6 +1,7 @@
 package robindarby.com.popularmovies.fragments;
 
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -9,15 +10,18 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.GridView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
+import android.widget.ShareActionProvider;
 
 import java.util.ArrayList;
-
 import robindarby.com.popularmovies.R;
 import robindarby.com.popularmovies.activities.MainActivity;
 import robindarby.com.popularmovies.adapters.MovieDetailsListViewAdapter;
@@ -25,12 +29,13 @@ import robindarby.com.popularmovies.models.Movie;
 import robindarby.com.popularmovies.models.Review;
 import robindarby.com.popularmovies.models.Video;
 import robindarby.com.popularmovies.services.MovieDetailsService;
-import robindarby.com.popularmovies.services.MoviesService;
 
 /**
  * Created by darby on 8/12/15.
  */
 public class MovieDetailsFragment extends Fragment {
+
+    private static final String TAG = "MOV_DETAILS_FRAG";
 
     protected ProgressDialog mLoadingDialog;
     private MovieDetailsListViewAdapter mMovieDetailsListViewAdapter;
@@ -66,6 +71,7 @@ public class MovieDetailsFragment extends Fragment {
         return fragmentLayout;
     }
 
+
     private void startMovieDetailsService() {
         mLoadingDialog = ProgressDialog.show(getActivity(), "", getString(R.string.loading), true);
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mMovieDetailsServiceMessageReceiver, new IntentFilter(MovieDetailsService.ACTION));
@@ -77,6 +83,7 @@ public class MovieDetailsFragment extends Fragment {
     private BroadcastReceiver mMovieDetailsServiceMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            getActivity();
             mLoadingDialog.dismiss();
             mReviews = (ArrayList<Review>)intent.getSerializableExtra(MovieDetailsService.REVIEWS_INTENT_EXTRA);
             mVideos = (ArrayList<Video>)intent.getSerializableExtra(MovieDetailsService.CLIPS_INTENT_EXTRA);
@@ -92,6 +99,13 @@ public class MovieDetailsFragment extends Fragment {
     private void showMovieDetails() {
         mMovieDetailsListViewAdapter = new MovieDetailsListViewAdapter(getActivity(), mMovie, mReviews, mVideos);
         mListView.setAdapter(mMovieDetailsListViewAdapter);
+
+        if(mVideos.size() > 0) {
+            Intent shareIntent = new Intent();
+            shareIntent.setAction(Intent.ACTION_SEND);
+            shareIntent.putExtra(Intent.EXTRA_TEXT, "https://www.youtube.com/watch?v=" + mVideos.get(0).getId());
+            ((MainActivity) getActivity()).setShareIntent(shareIntent);
+        }
     }
 
     @Override
@@ -104,8 +118,8 @@ public class MovieDetailsFragment extends Fragment {
 
     @Override
     public void onDestroy() {
-        if(mMovieDetailsListViewAdapter != null)
-            mMovieDetailsListViewAdapter.releaseLoaders();
+        if(mMovieDetailsListViewAdapter != null) mMovieDetailsListViewAdapter.releaseLoaders();
+        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mMovieDetailsServiceMessageReceiver);
         super.onDestroy();
     }
 }

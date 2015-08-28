@@ -1,22 +1,22 @@
 package robindarby.com.popularmovies.activities;
 
-import android.app.ProgressDialog;
-import android.content.res.Configuration;
-import android.support.v7.app.ActionBarActivity;
+import android.content.Intent;
+
 import android.os.Bundle;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.ShareActionProvider;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import java.util.ArrayList;
-import java.util.Collections;
+
 import robindarby.com.popularmovies.R;
-import robindarby.com.popularmovies.adapters.MovieAdapter;
 import robindarby.com.popularmovies.fragments.MovieDetailsFragment;
 import robindarby.com.popularmovies.fragments.MovieListFragment;
 import robindarby.com.popularmovies.models.Movie;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MAIN";
 
@@ -27,7 +27,8 @@ public class MainActivity extends ActionBarActivity {
     private boolean mTwoPane = false;
     private final static String MOVIE_DETAILS_FRAGMENT_TAG = "moviedetailsfragment";
     private final static String MOVIE_LIST_FRAGMENT_TAG = "movielistfragment";
-    private MovieListFragment mMovieListFragment;
+
+    private ShareActionProvider mShareActionProvider;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,8 +44,11 @@ public class MainActivity extends ActionBarActivity {
             }
         }
 
-        mMovieListFragment = (MovieListFragment)getSupportFragmentManager()
-                .findFragmentById(R.id.fragment_grid_container);
+        MovieListFragment movieListFragment = new MovieListFragment();
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, movieListFragment, MOVIE_LIST_FRAGMENT_TAG)
+                .addToBackStack(null)
+                .commit();
     }
 
     public void showMovieDetails(Movie movie) {
@@ -58,14 +62,15 @@ public class MainActivity extends ActionBarActivity {
             args.putSerializable(MOVIE_INTENT_EXTRA, movie);
             detailsFragment.setArguments(args);
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_grid_container, detailsFragment, MOVIE_LIST_FRAGMENT_TAG)
+                    .replace(R.id.fragment_container, detailsFragment, MOVIE_DETAILS_FRAGMENT_TAG)
                     .addToBackStack(null)
                     .commit();
         }
     }
 
     public void refreashFavorateMovieList() {
-        mMovieListFragment.refreashFavorateMovieList();
+        MovieListFragment movieListFragment = (MovieListFragment)getSupportFragmentManager().findFragmentByTag(MOVIE_LIST_FRAGMENT_TAG);
+        if( movieListFragment != null ) movieListFragment.refreashFavorateMovieList();
     }
 
     @Override
@@ -77,6 +82,13 @@ public class MainActivity extends ActionBarActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
+
+        // Locate MenuItem with ShareActionProvider
+        MenuItem item = menu.findItem(R.id.menu_item_share);
+
+        // Fetch and store ShareActionProvider
+        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+
         return true;
     }
 
@@ -87,19 +99,28 @@ public class MainActivity extends ActionBarActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        if (id == R.id.action_most_pop_settings) {
-            mMovieListFragment.updateMovies(false, Movie.MostPopularComparator);
-            return true;
-        }
-        else if (id == R.id.action_rating_settings) {
-            mMovieListFragment.updateMovies(false, Movie.RatedComparator);
-            return true;
-        }
-        else if (id == R.id.action_fav_settings) {
-            mMovieListFragment.updateMovies(true, null);
+        MovieListFragment movieListFragment = (MovieListFragment)getSupportFragmentManager().findFragmentByTag(MOVIE_LIST_FRAGMENT_TAG);
+        if(movieListFragment != null) {
+            if (id == R.id.action_most_pop_settings) {
+                movieListFragment.updateMovies(false, Movie.MostPopularComparator);
+                return true;
+            }
+            else if (id == R.id.action_rating_settings) {
+                movieListFragment.updateMovies(false, Movie.RatedComparator);
+                return true;
+            }
+            else if (id == R.id.action_fav_settings) {
+                movieListFragment.updateMovies(true, null);
+            }
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void setShareIntent(Intent shareIntent) {
+        if (mShareActionProvider != null) {
+            mShareActionProvider.setShareIntent(shareIntent);
+        }
     }
 
     @Override
