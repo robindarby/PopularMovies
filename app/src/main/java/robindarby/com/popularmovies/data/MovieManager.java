@@ -21,7 +21,7 @@ public class MovieManager {
     private static MovieManager mInstance;
     private MovieDbHelper mDbHelper;
 
-    private static final String[] mProjection = {
+    public static final String[] mProjection = {
             Movie.MovieEntry._ID,
             Movie.MovieEntry.COLUMN_NAME_MOVIE_ID,
             Movie.MovieEntry.COLUMN_NAME_TITLE,

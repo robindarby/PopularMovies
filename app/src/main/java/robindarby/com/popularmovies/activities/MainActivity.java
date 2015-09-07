@@ -20,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MAIN";
 
-
+    public static final String MOVIE_ID_INTENT_EXTRA = "moiveId";
     public static final String MOVIE_INTENT_EXTRA = "movie";
     public static final String MOVIE_LIST_STATE_EXTRA = "movies";
 
@@ -51,15 +51,15 @@ public class MainActivity extends AppCompatActivity {
                 .commit();
     }
 
-    public void showMovieDetails(Movie movie) {
+    public void showMovieDetails(int movieId) {
         if(mTwoPane) {
             MovieDetailsFragment detailsFragment = (MovieDetailsFragment) getSupportFragmentManager().findFragmentByTag(MOVIE_DETAILS_FRAGMENT_TAG);
-            detailsFragment.loadMovieDetails(movie);
+            detailsFragment.loadMovieDetails(movieId);
         }
         else {
             MovieDetailsFragment detailsFragment = new MovieDetailsFragment();
             Bundle args = new Bundle();
-            args.putSerializable(MOVIE_INTENT_EXTRA, movie);
+            args.putInt(MOVIE_ID_INTENT_EXTRA, movieId);
             detailsFragment.setArguments(args);
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, detailsFragment, MOVIE_DETAILS_FRAGMENT_TAG)

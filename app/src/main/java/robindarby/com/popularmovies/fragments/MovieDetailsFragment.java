@@ -7,6 +7,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
@@ -25,6 +27,7 @@ import java.util.ArrayList;
 import robindarby.com.popularmovies.R;
 import robindarby.com.popularmovies.activities.MainActivity;
 import robindarby.com.popularmovies.adapters.MovieDetailsListViewAdapter;
+import robindarby.com.popularmovies.data.MovieManager;
 import robindarby.com.popularmovies.models.Movie;
 import robindarby.com.popularmovies.models.Review;
 import robindarby.com.popularmovies.models.Video;
@@ -48,6 +51,10 @@ public class MovieDetailsFragment extends Fragment {
     private static final String VIDEOS_STATE_EXTRA = "videos";
     private static final String REVIEWS_STATE_EXTRA = "reviews";
 
+    private static final String PROVIDER_NAME = "robindarby.com.popularmovies";
+    private static final String URL = "content://" + PROVIDER_NAME + "/movie";
+    private static final Uri CONTECT_URL = Uri.parse(URL);
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         RelativeLayout fragmentLayout = (RelativeLayout) inflater.inflate(R.layout.movie_details_fragment, container, false);
@@ -58,14 +65,12 @@ public class MovieDetailsFragment extends Fragment {
             mVideos = (ArrayList<Video>) savedInstanceState.getSerializable(VIDEOS_STATE_EXTRA);
             mReviews = (ArrayList<Review>) savedInstanceState.getSerializable(REVIEWS_STATE_EXTRA);
             showMovieDetails();
-
-            return fragmentLayout;
         }
-
-        Bundle args = getArguments();
-        if(args != null && args.getSerializable(MainActivity.MOVIE_INTENT_EXTRA) != null) {
-            mMovie = (Movie) args.getSerializable(MainActivity.MOVIE_INTENT_EXTRA);
-            startMovieDetailsService();
+        else {
+            Bundle args = getArguments();
+            if (args != null && args.getInt(MainActivity.MOVIE_ID_INTENT_EXTRA, -1) > 0) {
+                loadMovieDetails(args.getInt(MainActivity.MOVIE_ID_INTENT_EXTRA, -1));
+            }
         }
 
         return fragmentLayout;
@@ -91,9 +96,29 @@ public class MovieDetailsFragment extends Fragment {
         }
     };
 
-    public void loadMovieDetails(Movie movie) {
-        mMovie = movie;
-        startMovieDetailsService();
+    public void loadMovieDetails(int movieId) {
+
+        String selection = Movie.MovieEntry.COLUMN_NAME_MOVIE_ID + "=?";
+
+        String[] selectionArgs = {
+                String.valueOf(movieId)
+        };
+
+        Cursor c = getActivity().getContentResolver().query(
+                CONTECT_URL,
+                MovieManager.mProjection,       // The columns to return
+                selection,                      // The columns for the WHERE clause
+                selectionArgs,                  // The values for the WHERE clause
+                null                            // The sort order
+        );
+        try {
+            mMovie = new Movie(c);
+            c.close();
+            startMovieDetailsService();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void showMovieDetails() {

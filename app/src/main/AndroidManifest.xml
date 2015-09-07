@@ -21,6 +21,12 @@
 
         <service android:name=".services.MoviesService" android:exported="false"/>
         <service android:name=".services.MovieDetailsService" android:exported="false"/>
+
+        <provider
+            android:name=".providers.PopularMoviesContentProvider"
+            android:authorities="robindarby.com.popularmovies"
+            android:exported="false"
+            android:syncable="false" />
     </application>
 
 </manifest>
